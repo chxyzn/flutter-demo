@@ -3,13 +3,17 @@ import 'package:flutter_app/api_calls.dart';
 import 'package:flutter_app/api_calls_login.dart';
 import 'package:flutter_app/login_screen.dart';
 import 'package:flutter_app/phonepe.dart';
+import 'package:flutter_app/pokedex_screen.dart';
 import 'package:flutter_app/pokemon_details.dart';
 import 'package:flutter_app/profile_screen.dart';
+
+String? profilePicturePath;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   String? isLoggedIn = await EncryptedStorage().read('isLoggedIn');
+  profilePicturePath = await EncryptedStorage().read('image');
 
   if (isLoggedIn == null) {
     runApp(const LoginScreenWrapper());
@@ -17,6 +21,12 @@ void main() async {
 
   runApp(const MyApp());
 }
+
+List<Widget> widgetOptions = [
+  const PokedexScreen(),
+  const PhonePeScreen(),
+  const ProfileScreen(),
+];
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -49,24 +59,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   TextEditingController searchBoxController = TextEditingController();
-  List<PokemonData> filteredList = [];
-  List<PokemonData> allPokemon = [];
 
   int currentIndex = 0;
-
-  void filterPokemon(String query, List<PokemonData> allPokemon) {
-    List<PokemonData> filterList = [];
-
-    for (var element in allPokemon) {
-      if (element.name.startsWith(query)) {
-        filterList.add(element);
-      }
-    }
-
-    setState(() {
-      filteredList = filterList;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,81 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
-      body: (currentIndex == 1)
-          ? PhonePeScreen()
-          : (currentIndex == 2)
-              ? ProfileScreen()
-              : Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: searchBoxController,
-                          decoration: const InputDecoration.collapsed(
-                              hintText: 'Search'),
-                          onChanged: (input) {
-                            filterPokemon(input, allPokemon);
-                          },
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      FutureBuilder(
-                          future: getPokemon(),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const CircularProgressIndicator();
-                            } else {
-                              allPokemon = snapshot.data ?? [];
-
-                              return SizedBox(
-                                height: 600,
-                                width: 200,
-                                child: ListView.builder(
-                                  itemCount: filteredList.length,
-                                  itemBuilder: (context, index) {
-                                    return GestureDetector(
-                                      onTap: () async {
-                                        Pokemon pokemon =
-                                            await getPokemonDetails(
-                                                filteredList[index].url ?? '');
-
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: (context) {
-                                          return PokemonDetailsScreen(
-                                            exp: pokemon.baseExp,
-                                            height: pokemon.height,
-                                            weight: pokemon.weight,
-                                          );
-                                        }));
-
-                                        print(pokemon.height);
-                                      },
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Container(
-                                          height: 60,
-                                          width: 40,
-                                          color: Colors.blue,
-                                          child: Center(
-                                              child: Text(
-                                                  '${filteredList[index].name}')),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            }
-                          }),
-                    ],
-                  ),
-                ),
+      body: widgetOptions[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         selectedItemColor: Colors.red,

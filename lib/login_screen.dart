@@ -60,13 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       bool verified = await login(
                           usernameController.text, passwordController.text);
 
-                      print(verified);
-
                       if (verified) {
                         Navigator.of(context).pushReplacement(
                             MaterialPageRoute(builder: (context) {
-                          return HomeScreen();
+                          return const HomeScreen();
                         }));
+                      } else {
+                        SnackBar snackBar = const SnackBar(
+                            content: Text('Incorrect Username and Password'));
+
+                        ScaffoldMessenger.of(context).showSnackBar(snackBar);
                       }
 
                       setState(() {

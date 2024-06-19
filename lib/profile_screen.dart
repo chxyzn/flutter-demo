@@ -1,8 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter_app/api_calls_login.dart';
+import 'package:flutter_app/main.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,8 +15,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool isPhotoTaken = false;
-  XFile imageFile = XFile('path');
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -31,18 +32,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final XFile? photo =
                           await picker.pickImage(source: ImageSource.camera);
 
-                      print(photo!.path);
+                      var pathToSaveImage =
+                          (await getApplicationDocumentsDirectory()).path;
+
+                      String photoName = basename(photo!.path);
+
+                      String pathToSave = '$pathToSaveImage/$photoName';
+
+                      photo.saveTo(pathToSave);
+
+                      await EncryptedStorage().write('image', pathToSave);
 
                       setState(() {
-                        imageFile = photo!;
-                        isPhotoTaken = true;
+                        profilePicturePath = pathToSave;
                       });
                     },
                     child: Container(
                       height: 50,
                       width: 100,
                       color: Colors.blue,
-                      child: Center(
+                      child: const Center(
                         child: Text('Upload your photo'),
                       ),
                     ),
@@ -52,14 +61,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
         child: CircleAvatar(
           radius: 200,
-          child: (isPhotoTaken)
-              ? CircleAvatar(
-                  radius: 200,
-                  backgroundImage: FileImage((File(imageFile.path))))
-              : const Icon(
-                  Icons.account_box,
-                  size: 100,
-                ),
+          foregroundImage: (profilePicturePath != null)
+              ? FileImage((File(profilePicturePath ?? '')))
+              : null,
+          child: const Icon(
+            Icons.account_box,
+            size: 100,
+          ),
         ),
       ),
     );
